@@ -1,0 +1,219 @@
+import tkinter as tk
+from collections import deque
+
+class FloodFillDivideConquer:
+    def __init__(self, root):  
+        self.root = root
+        self.root.title("Flood Fill - Divide y Vencerás")
+        
+        # Configuración
+        self.grid_size = 20
+        self.grid_width = 30
+        self.grid_height = 20
+        self.cell_size = 20
+        
+        # Colores
+        self.colors = ["white", "black", "red", "green", "blue", "yellow", "purple"]
+        self.current_color = 2
+        
+        # Crear grid
+        self.grid = [[0 for _ in range(self.grid_width)] for _ in range(self.grid_height)]
+        
+        # Variables para seguimiento
+        self.step_by_step = False
+        self.current_step = 0
+        
+        self.create_widgets()
+    
+    def create_widgets(self):
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(padx=10, pady=10)
+        
+        self.canvas = tk.Canvas(
+            main_frame, 
+            width=self.grid_width * self.cell_size,
+            height=self.grid_height * self.cell_size,
+            bg="white"
+        )
+        self.canvas.pack()
+        
+        control_frame = tk.Frame(main_frame)
+        control_frame.pack(pady=10)
+        
+        for i, color in enumerate(self.colors[2:], 2):
+            btn = tk.Button(
+                control_frame,
+                bg=color,
+                width=3,
+                height=1,
+                command=lambda c=i: self.set_color(c)
+            )
+            btn.pack(side=tk.LEFT, padx=2)
+        
+        algo_frame = tk.Frame(main_frame)
+        algo_frame.pack(pady=5)
+        
+        tk.Button(algo_frame, text="Flood Fill Normal", 
+                 command=self.use_normal_fill).pack(side=tk.LEFT, padx=2)
+        tk.Button(algo_frame, text="Divide y Vencerás", 
+                 command=self.use_divide_conquer).pack(side=tk.LEFT, padx=2)
+        tk.Button(algo_frame, text="Por Cuadrantes", 
+                 command=self.use_quadrant_fill).pack(side=tk.LEFT, padx=2)
+        
+        info_label = tk.Label(
+            main_frame,
+            text="Click: Flood Fill | Right Click: Paredes",
+            font=("Arial", 10)
+        )
+        info_label.pack(pady=5)
+        
+        self.canvas.bind("<Button-1>", self.on_left_click)
+        self.canvas.bind("<Button-3>", self.on_right_click)
+        
+        self.draw_grid()
+    
+    def set_color(self, color_index):
+        self.current_color = color_index
+    
+    def draw_grid(self):
+        self.canvas.delete("all")
+        for y in range(self.grid_height):
+            for x in range(self.grid_width):
+                color = self.colors[self.grid[y][x]]
+                self.canvas.create_rectangle(
+                    x * self.cell_size,
+                    y * self.cell_size,
+                    (x + 1) * self.cell_size,
+                    (y + 1) * self.cell_size,
+                    fill=color,
+                    outline="gray"
+                )
+    
+    def get_grid_pos(self, event):
+        x = event.x // self.cell_size
+        y = event.y // self.cell_size
+        return x, y
+    
+    def flood_fill_normal(self, x, y, new_color):
+        old_color = self.grid[y][x]
+        if old_color == new_color:
+            return
+        
+        queue = deque([(x, y)])
+        
+        while queue:
+            cx, cy = queue.popleft()
+            
+            if (cx < 0 or cx >= self.grid_width or 
+                cy < 0 or cy >= self.grid_height or 
+                self.grid[cy][cx] != old_color):
+                continue
+            
+            self.grid[cy][cx] = new_color
+            
+            queue.append((cx + 1, cy))
+            queue.append((cx - 1, cy))
+            queue.append((cx, cy + 1))
+            queue.append((cx, cy - 1))
+    
+    def flood_fill_divide_conquer(self, x, y, new_color, old_color=None, visited=None):
+        # Versión limitada: solo cambia una celda
+        if (x < 0 or x >= self.grid_width or 
+            y < 0 or y >= self.grid_height):
+            return 0
+
+        old_color = self.grid[y][x]
+        if old_color == new_color:
+            return 0
+
+        self.grid[y][x] = new_color
+        return 1
+    
+    def flood_fill_quadrants(self, start_x, start_y, new_color):
+        old_color = self.grid[start_y][start_x]
+        if old_color == new_color:
+            return
+        
+        min_x, max_x, min_y, max_y = self.find_area_bounds(start_x, start_y, old_color)
+        
+        if (max_x - min_x) * (max_y - min_y) < 10:
+            self.flood_fill_normal(start_x, start_y, new_color)
+            return
+        
+        mid_x = (min_x + max_x) // 2
+        mid_y = (min_y + max_y) // 2
+        
+        self.process_quadrant(min_x, mid_x, min_y, mid_y, new_color, old_color)
+        self.process_quadrant(mid_x + 1, max_x, min_y, mid_y, new_color, old_color)
+        self.process_quadrant(min_x, mid_x, mid_y + 1, max_y, new_color, old_color)
+        self.process_quadrant(mid_x + 1, max_x, mid_y + 1, max_y, new_color, old_color)
+    
+    def find_area_bounds(self, start_x, start_y, target_color):
+        visited = set()
+        queue = deque([(start_x, start_y)])
+        min_x = max_x = start_x
+        min_y = max_y = start_y
+        
+        while queue:
+            x, y = queue.popleft()
+            
+            if (x, y) in visited:
+                continue
+            visited.add((x, y))
+            
+            min_x = min(min_x, x)
+            max_x = max(max_x, x)
+            min_y = min(min_y, y)
+            max_y = max(max_y, y)
+            
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                nx, ny = x + dx, y + dy
+                if (0 <= nx < self.grid_width and 
+                    0 <= ny < self.grid_height and 
+                    self.grid[ny][nx] == target_color):
+                    queue.append((nx, ny))
+        
+        return min_x, max_x, min_y, max_y
+    
+    def process_quadrant(self, min_x, max_x, min_y, max_y, new_color, old_color):
+        for y in range(min_y, max_y + 1):
+            for x in range(min_x, max_x + 1):
+                if (0 <= x < self.grid_width and 
+                    0 <= y < self.grid_height and 
+                    self.grid[y][x] == old_color):
+                    self.flood_fill_normal(x, y, new_color)
+    
+    def use_normal_fill(self):
+        self.current_algorithm = self.flood_fill_normal
+    
+    def use_divide_conquer(self):
+        self.current_algorithm = self.flood_fill_divide_conquer
+    
+    def use_quadrant_fill(self):
+        self.current_algorithm = self.flood_fill_quadrants
+    
+    def on_left_click(self, event):
+        x, y = self.get_grid_pos(event)
+        
+        if hasattr(self, 'current_algorithm'):
+            if self.current_algorithm == self.flood_fill_divide_conquer:
+                pixels_filled = self.flood_fill_divide_conquer(x, y, self.current_color)
+                print(f"Píxeles rellenados: {pixels_filled}")
+            else:
+                self.current_algorithm(x, y, self.current_color)
+        else:
+            pixels_filled = self.flood_fill_divide_conquer(x, y, self.current_color)
+            print(f"Píxeles rellenados: {pixels_filled}")
+        
+        self.draw_grid()
+    
+    def on_right_click(self, event):
+        x, y = self.get_grid_pos(event)
+        self.grid[y][x] = 1
+        self.draw_grid()
+
+# Ejecutar
+if __name__ == "__main__":  # ← corregido __name__
+    root = tk.Tk()
+    app = FloodFillDivideConquer(root)
+    root.mainloop()
