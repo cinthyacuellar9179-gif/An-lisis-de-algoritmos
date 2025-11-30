@@ -1,1 +1,193 @@
+import time
+import matplotlib.pyplot as plt
+import sys
+from functools import lru_cache
+
+# Fibonacci SIN Programación Dinámica (recursivo simple)
+# Complejidad temporal: O(2^n)
+# Complejidad espacial: O(n)
+def fibonacci_sin_pd(n):
+    if n <= 1:
+        return n
+    return fibonacci_sin_pd(n-1) + fibonacci_sin_pd(n-2)
+
+# Fibonacci CON Programación Dinámica (memoización)
+# Complejidad temporal: O(n)
+# Complejidad espacial: O(n)
+def fibonacci_con_pd_memo(n, memo={}):
+    if n in memo:
+        return memo[n]
+    if n <= 1:
+        return n
+    memo[n] = fibonacci_con_pd_memo(n-1, memo) + fibonacci_con_pd_memo(n-2, memo)
+    return memo[n]
+
+# Fibonacci CON Programación Dinámica (tabulación)
+# Complejidad temporal: O(n)
+# Complejidad espacial: O(n)
+def fibonacci_con_pd_tab(n):
+    if n <= 1:
+        return n
+    dp = [0] * (n + 1)
+    dp[1] = 1
+    for i in range(2, n + 1):
+        dp[i] = dp[i-1] + dp[i-2]
+    return dp[n]
+
+# Función para medir tiempo de ejecución
+def medir_tiempo(func, n, *args):
+    inicio = time.time()
+    resultado = func(n, *args)
+    fin = time.time()
+    return resultado, fin - inicio
+
+# Función para medir uso de memoria (aproximado)
+def medir_memoria(func, n, *args):
+    import tracemalloc
+    tracemalloc.start()
+    resultado = func(n, *args)
+    memoria_actual, memoria_pico = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    return resultado, memoria_pico / 1024  # Convertir a KB
+
+# Pruebas y comparaciones
+def comparar_fibonacci():
+    print("COMPARACIÓN: Fibonacci CON vs SIN Programación Dinámica")
+ 
+    # Valores de n para probar (más pequeños para la versión sin PD)
+    valores_n_sin_pd = [5, 10, 15, 20, 25, 30, 35]
+    valores_n_con_pd = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    
+    # Almacenar resultados
+    tiempos_sin_pd = []
+    tiempos_con_pd = []
+    memoria_sin_pd = []
+    memoria_con_pd = []
+    
+    # Probar SIN Programación Dinámica
+    print("\n1. SIN Programación Dinámica:")
+    print("-" * 40)
+    for n in valores_n_sin_pd:
+        try:
+            resultado, tiempo = medir_tiempo(fibonacci_sin_pd, n)
+            _, memoria = medir_memoria(fibonacci_sin_pd, n)
+            tiempos_sin_pd.append(tiempo)
+            memoria_sin_pd.append(memoria)
+            print(f"n={n}: F({n}) = {resultado}, Tiempo: {tiempo:.6f}s, Memoria: {memoria:.2f} KB")
+        except RecursionError:
+            print(f"n={n}: Error - Límite de recursión alcanzado")
+            tiempos_sin_pd.append(float('inf'))
+            memoria_sin_pd.append(float('inf'))
+            break
+    
+    # Probar CON Programación Dinámica
+    print("\n2. CON Programación Dinámica (Memoización):")
+    print("-" * 50)
+    for n in valores_n_con_pd:
+        resultado, tiempo = medir_tiempo(fibonacci_con_pd_memo, n)
+        _, memoria = medir_memoria(fibonacci_con_pd_memo, n)
+        tiempos_con_pd.append(tiempo)
+        memoria_con_pd.append(memoria)
+        print(f"n={n}: F({n}) = {resultado}, Tiempo: {tiempo:.6f}s, Memoria: {memoria:.2f} KB")
+    
+    return (valores_n_sin_pd, tiempos_sin_pd, memoria_sin_pd, 
+            valores_n_con_pd, tiempos_con_pd, memoria_con_pd)
+
+# Crear gráficas comparativas
+def crear_graficas(valores_n_sin_pd, tiempos_sin_pd, memoria_sin_pd,
+                   valores_n_con_pd, tiempos_con_pd, memoria_con_pd):
+    
+    # Gráfica 1: Comparación de Tiempo de Ejecución
+    plt.figure(figsize=(12, 5))
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(valores_n_sin_pd, tiempos_sin_pd, 'ro-', label='Sin P. Dinámica', linewidth=2)
+    plt.plot(valores_n_con_pd, tiempos_con_pd, 'go-', label='Con P. Dinámica', linewidth=2)
+    plt.xlabel('Valor de n')
+    plt.ylabel('Tiempo (segundos)')
+    plt.title('COMPLEJIDAD TEMPORAL\nFibonacci con y sin Programación Dinámica')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.yscale('log')  # Escala logarítmica para mejor visualización
+    
+    # Gráfica 2: Comparación de Uso de Memoria
+    plt.subplot(1, 2, 2)
+    plt.plot(valores_n_sin_pd, memoria_sin_pd, 'ro-', label='Sin P. Dinámica', linewidth=2)
+    plt.plot(valores_n_con_pd, memoria_con_pd, 'go-', label='Con P. Dinámica', linewidth=2)
+    plt.xlabel('Valor de n')
+    plt.ylabel('Memoria (KB)')
+    plt.title('COMPLEJIDAD ESPACIAL\nFibonacci con y sin Programación Dinámica')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.yscale('log')  # Escala logarítmica para mejor visualización
+    
+    plt.tight_layout()
+    plt.savefig('comparacion_fibonacci.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    
+    # Gráficas
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+    
+    # Tiempo - escala normal
+    ax1.plot(valores_n_sin_pd, tiempos_sin_pd, 'ro-', label='Sin P. Dinámica', linewidth=2)
+    ax1.plot(valores_n_con_pd, tiempos_con_pd, 'go-', label='Con P. Dinámica', linewidth=2)
+    ax1.set_xlabel('Valor de n')
+    ax1.set_ylabel('Tiempo (segundos)')
+    ax1.set_title('Complejidad Temporal - Escala Lineal')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+    
+    # Tiempo - escala logarítmica
+    ax2.plot(valores_n_sin_pd, tiempos_sin_pd, 'ro-', label='Sin P. Dinámica', linewidth=2)
+    ax2.plot(valores_n_con_pd, tiempos_con_pd, 'go-', label='Con P. Dinámica', linewidth=2)
+    ax2.set_xlabel('Valor de n')
+    ax2.set_ylabel('Tiempo (segundos)')
+    ax2.set_title('Complejidad Temporal - Escala Logarítmica')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    ax2.set_yscale('log')
+    
+    # Memoria - escala normal
+    ax3.plot(valores_n_sin_pd, memoria_sin_pd, 'ro-', label='Sin P. Dinámica', linewidth=2)
+    ax3.plot(valores_n_con_pd, memoria_con_pd, 'go-', label='Con P. Dinámica', linewidth=2)
+    ax3.set_xlabel('Valor de n')
+    ax3.set_ylabel('Memoria (KB)')
+    ax3.set_title('Complejidad Espacial - Escala Lineal')
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    
+    # Memoria - escala logarítmica
+    ax4.plot(valores_n_sin_pd, memoria_sin_pd, 'ro-', label='Sin P. Dinámica', linewidth=2)
+    ax4.plot(valores_n_con_pd, memoria_con_pd, 'go-', label='Con P. Dinámica', linewidth=2)
+    ax4.set_xlabel('Valor de n')
+    ax4.set_ylabel('Memoria (KB)')
+    ax4.set_title('Complejidad Espacial - Escala Logarítmica')
+    ax4.legend()
+    ax4.grid(True, alpha=0.3)
+    ax4.set_yscale('log')
+    
+    plt.tight_layout()
+    plt.savefig('comparacion_detallada_fibonacci.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
+# Función principal
+def main():
+    print("ANÁLISIS DE FIBONACCI CON Y SIN PROGRAMACIÓN DINÁMICA")
+    print("CuéllarHernández Cinthya Sofía")
+
+    
+ 
+    resultados = comparar_fibonacci()
+    crear_graficas(*resultados)
+    
+
+    print("RESUMEN DE RESULTADOS:")
+   
+    print(" SIN Programación Dinámica: O(2^n) - Exponencial")
+    print(" CON Programación Dinámica: O(n) - Lineal")
+
+ 
+
+if __name__ == "__main__":
+    main()
 
