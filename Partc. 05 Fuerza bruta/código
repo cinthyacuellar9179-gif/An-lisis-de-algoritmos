@@ -1,1 +1,100 @@
+#Cinthya Sofía Cuéllar Hernández
+#Analisis de algritmos D01 25B
 
+import tkinter as tk
+import numpy as np
+import random
+
+# Función para calcular el par más cercano
+def par_mas_cercano(puntos):
+    min_distancia = float('inf')
+    par_cercano = None
+    
+    for i in range(len(puntos)):
+        for j in range(i + 1, len(puntos)):
+            # Cálculo de la distancia utilizando la fórmula dada (como np.linalg.norm(p1 - p2))
+            distancia = np.linalg.norm(puntos[i] - puntos[j])
+            if distancia < min_distancia:
+                min_distancia = distancia
+                par_cercano = (puntos[i], puntos[j])
+    
+    return par_cercano, min_distancia
+
+# Función para generar puntos aleatorios en el rango de 0-40
+def generar_puntos_aleatorios():
+    puntos = []
+    for _ in range(5):
+        punto = np.array([random.randint(0, 40) for _ in range(2)])  # Genera 2 coordenadas aleatorias (X, Y)
+        puntos.append(punto)
+    return puntos
+
+# Función para actualizar la interfaz con los puntos más cercanos
+def mostrar_resultados():
+    try:
+        # Obtener los puntos de los campos de entrada
+        puntos = []
+        for i in range(5):
+            x = float(entry_x[i].get())
+            y = float(entry_y[i].get())
+            puntos.append(np.array([x, y]))
+        
+        # Encontrar el par más cercano
+        par_cercano, distancia = par_mas_cercano(puntos)
+        
+        # Mostrar el resultado
+        resultado_label.config(text=f"Par más cercano: {par_cercano[0]} y {par_cercano[1]}\nDistancia: {distancia:.2f}")
+    
+    except ValueError:
+        resultado_label.config(text="Por favor ingrese valores válidos para todos los puntos.")
+
+# Función para generar los puntos aleatorios y actualizarlos en la interfaz
+def generar_aleatorios():
+    puntos = generar_puntos_aleatorios()
+    for i in range(5):
+        entry_x[i].delete(0, tk.END)
+        entry_y[i].delete(0, tk.END)
+        
+        entry_x[i].insert(0, str(puntos[i][0]))
+        entry_y[i].insert(0, str(puntos[i][1]))
+
+# Función para limpiar los campos de entrada
+def limpiar_campos():
+    for i in range(5):
+        entry_x[i].delete(0, tk.END)
+        entry_y[i].delete(0, tk.END)
+    resultado_label.config(text="Introduce los puntos y presiona 'Calcular par más cercano'")
+
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Calcular el Par Más Cercano")
+
+# Etiquetas y campos de entrada para los puntos (solo X y Y)
+entry_x = []
+entry_y = []
+
+for i in range(5):
+    tk.Label(root, text=f"Punto {i+1} - X:").grid(row=i, column=0)
+    tk.Label(root, text=f"Punto {i+1} - Y:").grid(row=i, column=1)
+
+    entry_x.append(tk.Entry(root))
+    entry_y.append(tk.Entry(root))
+
+    entry_x[i].grid(row=i, column=2)
+    entry_y[i].grid(row=i, column=3)
+
+# Botones
+calcular_button = tk.Button(root, text="Calcular par más cercano", command=mostrar_resultados)
+calcular_button.grid(row=6, column=0, columnspan=4)
+
+aleatorio_button = tk.Button(root, text="Generar puntos aleatorios", command=generar_aleatorios)
+aleatorio_button.grid(row=7, column=0, columnspan=4)
+
+limpiar_button = tk.Button(root, text="Limpiar ", command=limpiar_campos)
+limpiar_button.grid(row=8, column=0, columnspan=4)
+
+# Etiqueta para mostrar los resultados
+resultado_label = tk.Label(root, text="Introduce los puntos y presiona 'Calcular par más cercano'")
+resultado_label.grid(row=9, column=0, columnspan=4)
+
+# Ejecutar la aplicación
+root.mainloop()
