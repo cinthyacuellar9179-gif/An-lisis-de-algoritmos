@@ -1,1 +1,144 @@
+#Cinthya Sofía Cuéllar Hernández
+import random
+import time
+import matplotlib.pyplot as plt
 
+
+
+
+# GENERADOR
+def Generador(N):
+    return random.sample(range(N * 3), N)  # Lista aleatoria sin duplicados
+
+
+# ORDENAMIENTO
+
+def bubble_sort(arr):
+    a = arr.copy()
+    n = len(a)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if a[j] > a[j + 1]:
+                a[j], a[j + 1] = a[j + 1], a[j]
+    return a
+
+
+def merge_sort(arr):
+    a = arr.copy()
+
+    def merge_sort_recursive(arr):
+        if len(arr) > 1:
+            mid = len(arr) // 2
+            L = arr[:mid]
+            R = arr[mid:]
+
+            merge_sort_recursive(L)
+            merge_sort_recursive(R)
+
+            i = j = k = 0
+            while i < len(L) and j < len(R):
+                if L[i] < R[j]:
+                    arr[k] = L[i]
+                    i += 1
+                else:
+                    arr[k] = R[j]
+                    j += 1
+                k += 1
+
+            while i < len(L):
+                arr[k] = L[i]
+                i += 1
+                k += 1
+
+            while j < len(R):
+                arr[k] = R[j]
+                j += 1
+                k += 1
+
+    merge_sort_recursive(a)
+    return a
+
+
+def quick_sort(arr):
+    a = arr.copy()
+
+    def quick_sort_recursive(arr, low, high):
+        if low < high:
+            pi = partition(arr, low, high)
+            quick_sort_recursive(arr, low, pi - 1)
+            quick_sort_recursive(arr, pi + 1, high)
+
+    def partition(arr, low, high):
+        pivot = arr[low]
+        left = low + 1
+        right = high
+
+        done = False
+        while not done:
+            while left <= right and arr[left] <= pivot:
+                left = left + 1
+            while arr[right] >= pivot and right >= left:
+                right = right - 1
+            if right < left:
+                done = True
+            else:
+                arr[left], arr[right] = arr[right], arr[left]
+
+        arr[low], arr[right] = arr[right], arr[low]
+        return right
+
+    quick_sort_recursive(a, 0, len(a) - 1)
+    return a
+
+
+# ORDENADOR
+def Ordenador(lista, algoritmo):
+    if algoritmo == "bubble":
+        return bubble_sort(lista)
+    elif algoritmo == "merge":
+        return merge_sort(lista)
+    elif algoritmo == "quick":
+        return quick_sort(lista)
+    else:
+        raise ValueError("Algoritmo no reconocido: usa 'bubble', 'merge' o 'quick'")
+
+
+# GRAFICADOR
+def Graficador(resultados):
+    for algoritmo in resultados:
+        x = list(resultados[algoritmo].keys())
+        y = list(resultados[algoritmo].values())
+        plt.plot(x, y, label=algoritmo.capitalize() + " Sort")
+
+    plt.xlabel("Tamaño de lista")
+    plt.ylabel("Tiempo de ejecución (segundos)")
+    plt.title("Comparación de Algoritmos de Ordenamiento")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("grafica_algoritmos.png")
+    plt.show()
+
+
+
+def Benchmark():
+    tamanos = list(range(50, 1001, 50))
+    algoritmos = ["bubble", "merge", "quick"]
+    resultados = {algoritmo: {} for algoritmo in algoritmos}
+
+    for n in tamanos:
+        lista = Generador(n)
+        for algoritmo in algoritmos:
+            inicio = time.perf_counter()
+            Ordenador(lista, algoritmo)
+            fin = time.perf_counter()
+            resultados[algoritmo][n] = fin - inicio
+            print(f"Algoritmo: {algoritmo}, N: {n}, Tiempo: {fin - inicio:.5f} s")
+
+    return resultados
+
+
+
+if __name__ == "__main__":
+    resultados = Benchmark()
+    Graficador(resultados)
