@@ -1,1 +1,233 @@
+import heapq
+from collections import defaultdict
+
+
+class Grafo:
+    def __init__(self, vertices):
+        self.V = vertices
+        self.grafo = defaultdict(list)
+        self.aristas = []
+
+    def agregar_arista(self, u, v, peso):
+        self.grafo[u].append((v, peso))
+        self.grafo[v].append((u, peso))
+        self.aristas.append((u, v, peso))
+
+
+class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [0] * n
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def union(self, x, y):
+        root_x = self.find(x)
+        root_y = self.find(y)
+
+        if root_x == root_y:
+            return False
+
+        if self.rank[root_x] < self.rank[root_y]:
+            self.parent[root_x] = root_y
+        elif self.rank[root_x] > self.rank[root_y]:
+            self.parent[root_y] = root_x
+        else:
+            self.parent[root_y] = root_x
+            self.rank[root_x] += 1
+        return True
+
+
+def prim_mst(grafo, inicio=0):
+    n = grafo.V
+    visitado = [False] * n
+    heap = []
+    mst = []
+    peso_total = 0
+
+    # Iniciar con el nodo de inicio
+    visitado[inicio] = True
+    for vecino, peso in grafo.grafo[inicio]:
+        heapq.heappush(heap, (peso, inicio, vecino))
+
+    while heap and len(mst) < n - 1:
+        peso, u, v = heapq.heappop(heap)
+
+        if not visitado[v]:
+            visitado[v] = True
+            mst.append((u, v, peso))
+            peso_total += peso
+
+            for vecino, peso_arista in grafo.grafo[v]:
+                if not visitado[vecino]:
+                    heapq.heappush(heap, (peso_arista, v, vecino))
+
+    return mst, peso_total
+
+
+def kruskal_mst(grafo):
+    aristas_ordenadas = sorted(grafo.aristas, key=lambda x: x[2])
+    uf = UnionFind(grafo.V)
+    mst = []
+    peso_total = 0
+
+    for u, v, peso in aristas_ordenadas:
+        if uf.union(u, v):
+            mst.append((u, v, peso))
+            peso_total += peso
+            if len(mst) == grafo.V - 1:
+                break
+
+    return mst, peso_total
+
+
+def dijkstra(grafo, origen):
+    n = grafo.V
+    distancias = [float('inf')] * n
+    distancias[origen] = 0
+    heap = [(0, origen)]
+
+    while heap:
+        dist_actual, nodo_actual = heapq.heappop(heap)
+
+        if dist_actual > distancias[nodo_actual]:
+            continue
+
+        for vecino, peso in grafo.grafo[nodo_actual]:
+            nueva_distancia = dist_actual + peso
+
+            if nueva_distancia < distancias[vecino]:
+                distancias[vecino] = nueva_distancia
+                heapq.heappush(heap, (nueva_distancia, vecino))
+
+    return distancias
+
+
+def mostrar_resultados():
+    # Crear grafo con 6 nodos y 9 aristas
+    g = Grafo(6)
+
+    # Agregar aristas (nodo1, nodo2, peso)
+    g.agregar_arista(0, 1, 4)
+    g.agregar_arista(0, 2, 1)
+    g.agregar_arista(1, 2, 2)
+    g.agregar_arista(1, 3, 5)
+    g.agregar_arista(2, 3, 8)
+    g.agregar_arista(2, 4, 10)
+    g.agregar_arista(3, 4, 2)
+    g.agregar_arista(3, 5, 6)
+    g.agregar_arista(4, 5, 3)
+
+    print("=" * 60)
+    print("ALGORITMOS PARA ÁRBOL DE EXPANSIÓN MÍNIMA (MST)")
+    print("=" * 60)
+
+    # Algoritmo de Prim
+    print("\n--- ALGORITMO DE PRIM ---")
+    mst_prim, peso_prim = prim_mst(g)
+    print("Aristas seleccionadas:")
+    for u, v, peso in mst_prim:
+        print(f"  {u} - {v} : {peso}")
+    print(f"Peso total del MST: {peso_prim}")
+
+    # Algoritmo de Kruskal
+    print("\n--- ALGORITMO DE KRUSKAL ---")
+    mst_kruskal, peso_kruskal = kruskal_mst(g)
+    print("Aristas seleccionadas:")
+    for u, v, peso in mst_kruskal:
+        print(f"  {u} - {v} : {peso}")
+    print(f"Peso total del MST: {peso_kruskal}")
+
+    # Dijkstra (opcional)
+    print("\n--- ALGORITMO DE DIJKSTRA (desde nodo 0) ---")
+    distancias = dijkstra(g, 0)
+    print("Distancias mínimas desde el nodo 0:")
+    for i, dist in enumerate(distancias):
+        print(f"  Nodo {i}: {dist}")
+
+
+def mostrar_comparacion_tabla():
+    g = Grafo(6)
+    # Mismas aristas que antes...
+    g.agregar_arista(0, 1, 4)
+    g.agregar_arista(0, 2, 1)
+    g.agregar_arista(1, 2, 2)
+    g.agregar_arista(1, 3, 5)
+    g.agregar_arista(2, 3, 8)
+    g.agregar_arista(2, 4, 10)
+    g.agregar_arista(3, 4, 2)
+    g.agregar_arista(3, 5, 6)
+    g.agregar_arista(4, 5, 3)
+
+    # Ejecutar algoritmos
+    mst_prim, peso_prim = prim_mst(g)
+    mst_kruskal, peso_kruskal = kruskal_mst(g)
+
+    print("=" * 80)
+    print("COMPARACIÓN DETALLADA: PRIM vs KRUSKAL")
+    print("=" * 80)
+
+    # Tabla comparativa
+    print("\n" + "═" * 80)
+    print(f"{'CRITERIO':<25} {'PRIM':<25} {'KRUSKAL':<25}")
+    print("═" * 80)
+
+    comparaciones = [
+        ("Peso Total MST", f"{peso_prim}", f"{peso_kruskal}"),
+        ("Número de Aristas", f"{len(mst_prim)}", f"{len(mst_kruskal)}"),
+        ("Complejidad", "O(E log V)", "O(E log E)"),
+        ("Enfoque", "Por Nodos", "Por Aristas"),
+        ("Inicialización", "Desde nodo origen", "Todas las aristas ordenadas"),
+        ("Dependencia", "Nodo inicial", "Independiente del inicio"),
+        ("Uso de Memoria", "Moderado", "Moderado"),
+        ("Resultado", "Siempre Óptimo", "Siempre Óptimo")
+    ]
+
+    for criterio, prim, kruskal in comparaciones:
+        print(f"{criterio:<25} {prim:<25} {kruskal:<25}")
+
+    print("═" * 80)
+
+    # Tabla de aristas seleccionadas
+    print("\n" + "─" * 60)
+    print("ARISTAS SELECCIONADAS POR CADA ALGORITMO")
+    print("─" * 60)
+    print(f"{'ALGORITMO':<12} {'ARISTAS':<40} {'PESO TOTAL':<10}")
+    print("─" * 60)
+
+    def formatear_aristas(mst):
+        return " | ".join([f"{u}-{v}({p})" for u, v, p in mst])
+
+    print(f"{'PRIM':<12} {formatear_aristas(mst_prim):<40} {peso_prim:<10}")
+    print(f"{'KRUSKAL':<12} {formatear_aristas(mst_kruskal):<40} {peso_kruskal:<10}")
+    print("─" * 60)
+
+    # Análisis de diferencias
+    print("\n" + "ANÁLISIS DE DIFERENCIAS:")
+    print("─" * 40)
+
+    aristas_prim_set = set((min(u, v), max(u, v), p) for u, v, p in mst_prim)
+    aristas_kruskal_set = set((min(u, v), max(u, v), p) for u, v, p in mst_kruskal)
+
+    comunes = aristas_prim_set.intersection(aristas_kruskal_set)
+    solo_prim = aristas_prim_set - aristas_kruskal_set
+    solo_kruskal = aristas_kruskal_set - aristas_prim_set
+
+    print(f"• Aristas en común: {len(comunes)}")
+    print(f"• Aristas solo en Prim: {len(solo_prim)}")
+    print(f"• Aristas solo en Kruskal: {len(solo_kruskal)}")
+
+    if peso_prim == peso_kruskal:
+        print("Ambos algoritmos encontraron MSTs con el MISMO peso total")
+    else:
+        print("Los pesos totales son diferentes")
+
+
+if __name__ == "__main__":
+    mostrar_resultados()
+    mostrar_comparacion_tabla()
+
 
